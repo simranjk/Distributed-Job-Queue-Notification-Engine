@@ -1,0 +1,82 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: distributed-job-queue
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/jobengine
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    defer-datasource-initialization: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      continue-on-error: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 3000ms
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        job.processing.duration: true
+        http.server.requests: true
+      sla:
+        job.processing.duration: 50ms, 100ms, 250ms, 500ms, 1s, 2s, 5s
+    export:
+      prometheus:
+        enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+  # Springdoc OpenAPI 3 (Swagger UI) - access controlled by Spring Security
+  springdoc:
+    api-docs:
+      enabled: true
+      path: /v3/api-docs
+    swagger-ui:
+      enabled: true
+      path: /swagger-ui.html
+      operations-sorter: alpha
+
+  # Security credentials (overridable via env vars APP_SECURITY_USER / APP_SECURITY_PASSWORD)
+  security:
+    user:
+      name: ${APP_SECURITY_USER:admin}
+      password: ${APP_SECURITY_PASSWORD:change-me}
